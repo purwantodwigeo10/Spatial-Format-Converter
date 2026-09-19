@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Synthetic polygons</name>
+    <Placemark>
+      <name>Parcel A</name>
+      <ExtendedData><Data name="category"><value>Test</value></Data></ExtendedData>
+      <Polygon><outerBoundaryIs><LinearRing><coordinates>
+        110.0000,-7.0000,0 110.0010,-7.0000,0 110.0010,-6.9990,0 110.0000,-6.9990,0 110.0000,-7.0000,0
+      </coordinates></LinearRing></outerBoundaryIs></Polygon>
+    </Placemark>
+    <Placemark>
+      <name>Parcel B</name>
+      <ExtendedData><Data name="category"><value>Test</value></Data></ExtendedData>
+      <Polygon><outerBoundaryIs><LinearRing><coordinates>
+        110.0012,-7.0000,0 110.0022,-7.0000,0 110.0022,-6.9990,0 110.0012,-6.9990,0 110.0012,-7.0000,0
+      </coordinates></LinearRing></outerBoundaryIs></Polygon>
+    </Placemark>
+  </Document>
+</kml>

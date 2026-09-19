@@ -1,0 +1,24 @@
+[general]
+name=Spatial Format Converter
+qgisMinimumVersion=3.22
+qgisMaximumVersion=3.99
+description=Convert polygon data among SHP, KML, KMZ, and supported CAD sources with CRS and attribute controls.
+version=26.1.0
+author=Dwi Purwanto
+email=ruangspasial@gmail.com
+about=Spatial Format Converter creates polygon SHP, KML, KMZ, or closed-boundary DXF output. It supports CRS transformation, selected attribute transfer, CAD layer mapping, and optional CAD text-to-polygon attributes. Available CAD readers depend on the GDAL drivers supplied by the user's QGIS installation; DWG output is not provided. License activation uses the Ruang Spasial License Hub over HTTPS. No GIS dataset is transmitted to the service.
+category=Vector
+icon=icon.png
+homepage=https://aktivasi.ruangspasial.my.id/help/spatial-format-converter-qgis
+tracker=https://github.com/purwantodwigeo10/spatial-format-converter-qgis/issues
+repository=https://github.com/purwantodwigeo10/spatial-format-converter-qgis
+license=GPL-3.0-or-later
+experimental=False
+deprecated=False
+server=False
+hasProcessingProvider=False
+tags=converter,shapefile,kml,kmz,cad,dxf,polygon,crs,attributes
+changelog=26.1.0
+    Improved polygon conversion reliability for SHP, KML, KMZ, and supported CAD sources.
+    Refined CRS transformation, selected attribute transfer, and CAD layer mapping.
+    Added sample data and clearer usage documentation.
