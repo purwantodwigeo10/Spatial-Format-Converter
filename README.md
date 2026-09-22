@@ -47,8 +47,13 @@ is stored in the current user's application-data directory.
 ## Source, help, and support
 
 - Help: <https://aktivasi.ruangspasial.my.id/help/spatial-format-converter-qgis>
-- Source: <https://github.com/purwantodwigeo10/spatial-format-converter-qgis>
-- Issues: <https://github.com/purwantodwigeo10/spatial-format-converter-qgis/issues>
+- Source: <https://github.com/purwantodwigeo10/Spatial-Format-Converter>
+- Issues: <https://github.com/purwantodwigeo10/Spatial-Format-Converter/issues>
 
 Copyright (C) 2026 Dwi Purwanto / Ruang Spasial. Licensed under
 GPL-3.0-or-later; see `LICENSE`.
+
+
+## Current revision
+
+See [REVISION_NOTES.md](REVISION_NOTES.md) for behavior changes and validation limits. Existing output filenames are refused; choose a new name for each run.

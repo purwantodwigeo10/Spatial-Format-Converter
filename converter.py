@@ -1,3 +1,5 @@
+from .output_safety import ensure_new_output
+from .qt_compat import FIELD_STRING
 # -*- coding: utf-8 -*-
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -20,7 +22,6 @@ from qgis.core import (
     QgsVectorLayer,
     QgsWkbTypes,
 )
-from qgis.PyQt.QtCore import QVariant
 
 
 TECHNICAL_FIELDS = {
@@ -32,7 +33,7 @@ TECHNICAL_FIELDS = {
 LAYER_FIELD_CANDIDATES = ("Layer", "layer", "LAYER", "LayerName", "layer_name")
 TEXT_FIELD_CANDIDATES = (
     "Text", "TEXT", "TextString", "text_string", "TextValue", "text_value",
-    "Label", "LABEL", "Name", "NAME", "RefName", "EntityHandle",
+    "Label", "LABEL", "Name", "NAME",
 )
 
 
@@ -149,8 +150,8 @@ class ConversionEngine:
                     self.layer_field = layer_field
                     all_values.update(values)
                     if QgsWkbTypes.geometryType(part.layer.wkbType()) in (
-                        QgsWkbTypes.LineGeometry,
-                        QgsWkbTypes.PolygonGeometry,
+                        QgsWkbTypes.GeometryType.LineGeometry,
+                        QgsWkbTypes.GeometryType.PolygonGeometry,
                     ):
                         boundary_values.update(values)
             self.layer_values = sorted(
@@ -212,8 +213,8 @@ class ConversionEngine:
                 if not field_name:
                     continue
                 if QgsWkbTypes.geometryType(part.layer.wkbType()) not in (
-                    QgsWkbTypes.LineGeometry,
-                    QgsWkbTypes.PolygonGeometry,
+                    QgsWkbTypes.GeometryType.LineGeometry,
+                    QgsWkbTypes.GeometryType.PolygonGeometry,
                 ):
                     continue
                 field_index = part.layer.fields().indexOf(field_name)
@@ -245,9 +246,9 @@ class ConversionEngine:
             raise ConversionError(
                 "The selected main boundary layer contains no geometry.")
         geometry_type = QgsWkbTypes.geometryType(layer.wkbType())
-        if geometry_type == QgsWkbTypes.PolygonGeometry:
+        if geometry_type == QgsWkbTypes.GeometryType.PolygonGeometry:
             return [(QgsGeometry(feature.geometry()), feature) for feature in features]
-        if geometry_type != QgsWkbTypes.LineGeometry:
+        if geometry_type != QgsWkbTypes.GeometryType.LineGeometry:
             raise ConversionError(
                 "The main boundary must contain polygon or line geometry.")
 
@@ -264,7 +265,7 @@ class ConversionEngine:
             )
         parts = polygonized.asGeometryCollection()
         if not parts and QgsWkbTypes.geometryType(
-                polygonized.wkbType()) == QgsWkbTypes.PolygonGeometry:
+                polygonized.wkbType()) == QgsWkbTypes.GeometryType.PolygonGeometry:
             parts = [polygonized]
         if not parts:
             raise ConversionError("Polygonize returned no polygon parts.")
@@ -311,7 +312,7 @@ class ConversionEngine:
                 if geometry.isEmpty():
                     continue
                 if QgsWkbTypes.geometryType(
-                        geometry.wkbType()) == QgsWkbTypes.PointGeometry:
+                        geometry.wkbType()) == QgsWkbTypes.GeometryType.PointGeometry:
                     point = geometry.asPoint() if not geometry.isMultipart(
                     ) else geometry.asMultiPoint()[0]
                     point_geometry = QgsGeometry.fromPointXY(point)
@@ -333,9 +334,7 @@ class ConversionEngine:
             return " | ".join(dict.fromkeys(inside))
         if not records:
             return None
-        centre = polygon.pointOnSurface()
-        nearest = min(records, key=lambda item: centre.distance(item[0]))
-        return nearest[1]
+        return None  # No text inside this polygon: do not copy a neighbour's label.
 
     def build_polygon_layer(
         self,
@@ -370,16 +369,16 @@ class ConversionEngine:
                 field.name(): field for field in source_layer.fields()}
             for name in selected_values:
                 if name not in available:
-                    continue
+                    raise ConversionError("Selected attribute is unavailable in this layer: %s" % name)
                 field_map.append(
                     (name, safe_name(name, used, shapefile_names)))
 
-        output = QgsVectorLayer("Polygon", "SFC_Polygon", "memory")
+        output = QgsVectorLayer("MultiPolygon", "SFC_Polygon", "memory")
         output.setCrs(output_crs)
         provider = output.dataProvider()
         fields = []
         for _source_name, output_name in field_map:
-            fields.append(QgsField(output_name, QVariant.String, len=254))
+            fields.append(QgsField(output_name, FIELD_STRING, len=254))
         provider.addAttributes(fields)
         output.updateFields()
 
@@ -416,11 +415,15 @@ class ConversionEngine:
                 except Exception as error:
                     raise ConversionError(
                         "Coordinate transformation failed: {}".format(error))
+            if not output_geometry.isMultipart():
+                output_geometry.convertToMultiType()
             feature = QgsFeature(output.fields())
             feature.setGeometry(output_geometry)
             feature.setAttributes(attributes)
             output_features.append(feature)
-        provider.addFeatures(output_features)
+        added, _ = provider.addFeatures(output_features)
+        if not added or output.featureCount() != len(output_features):
+            raise ConversionError("Some polygon features could not be added to the output.")
         output.updateExtents()
         if output.featureCount() < 1:
             raise ConversionError("The polygon output is empty.")
@@ -430,7 +433,7 @@ class ConversionEngine:
         options = QgsVectorFileWriter.SaveVectorOptions()
         options.driverName = driver
         options.fileEncoding = "UTF-8"
-        options.actionOnExistingFile = QgsVectorFileWriter.CreateOrOverwriteFile
+        options.actionOnExistingFile = QgsVectorFileWriter.ActionOnExistingFile.CreateOrOverwriteFile
         result = QgsVectorFileWriter.writeAsVectorFormatV3(
             layer,
             path,
@@ -438,7 +441,7 @@ class ConversionEngine:
             options,
         )
         error_code = result[0] if isinstance(result, tuple) else result
-        if error_code != QgsVectorFileWriter.NoError:
+        if error_code != QgsVectorFileWriter.WriterError.NoError:
             message = result[1] if isinstance(
                 result, tuple) and len(result) > 1 else str(result)
             raise ConversionError("Output writer failed: {}".format(message))
@@ -613,6 +616,10 @@ class ConversionEngine:
         if output_format in ("KML", "KMZ"):
             target_crs = QgsCoordinateReferenceSystem("EPSG:4326")
             self._message("KML/KMZ output CRS set to WGS 84 (EPSG:4326).")
+        extension = {"SHP": ".shp", "KML": ".kml", "KMZ": ".kmz", "DXF": ".dxf"}.get(output_format)
+        if extension is None:
+            raise ConversionError("Unsupported output format: %s" % output_format)
+        ensure_new_output(os.path.join(output_folder, output_name + extension))
         polygon_layer = self.build_polygon_layer(
             main_choice,
             selected_values,

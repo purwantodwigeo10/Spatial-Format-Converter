@@ -1,3 +1,4 @@
+from .license_response import has_denial
 # -*- coding: utf-8 -*-
 # SPDX-License-Identifier: GPL-3.0-or-later
 """License state and HTTPS activation for Spatial Format Converter."""
@@ -276,6 +277,8 @@ def _response_value(response, keys):
 
 
 def _response_status(response):
+    if has_denial(response):
+        return "inactive"
     value = _response_value(
         response, ("status", "license_status", "activation_status", "state"))
     value = value.lower().replace("-", "_").replace(" ", "_")

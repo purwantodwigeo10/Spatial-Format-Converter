@@ -1,3 +1,4 @@
+from .run_guard import single_run
 # -*- coding: utf-8 -*-
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -272,12 +273,12 @@ def _apply_activation_badge(
 
 def _enable_window_controls(dialog):
     dialog.setWindowFlags(
-        Qt.Window
-        | Qt.WindowTitleHint
-        | Qt.WindowSystemMenuHint
-        | Qt.WindowMinimizeButtonHint
-        | Qt.WindowMaximizeButtonHint
-        | Qt.WindowCloseButtonHint
+        Qt.WindowType.Window
+        | Qt.WindowType.WindowTitleHint
+        | Qt.WindowType.WindowSystemMenuHint
+        | Qt.WindowType.WindowMinimizeButtonHint
+        | Qt.WindowType.WindowMaximizeButtonHint
+        | Qt.WindowType.WindowCloseButtonHint
     )
 
 
@@ -346,7 +347,7 @@ class ActivationDialog(QDialog):
         actions.addWidget(activate_button)
         layout.addLayout(actions)
 
-        close_buttons = QDialogButtonBox(QDialogButtonBox.Close)
+        close_buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
         close_buttons.rejected.connect(self.close)
         layout.addWidget(close_buttons)
 
@@ -370,7 +371,7 @@ class ActivationDialog(QDialog):
             )
 
     def synchronize(self):
-        QApplication.setOverrideCursor(Qt.WaitCursor)
+        QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
         try:
             result, message, _state = refresh()
         finally:
@@ -384,7 +385,7 @@ class ActivationDialog(QDialog):
             QMessageBox.warning(self, "Spatial Format Converter", message)
 
     def apply_activation(self):
-        QApplication.setOverrideCursor(Qt.WaitCursor)
+        QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
         try:
             success, message = activate(self.code_edit.text())
         finally:
@@ -478,9 +479,9 @@ class ConverterDialog(QDialog):
         attributes_layout.addWidget(self.attribute_list, 1)
         selection_buttons = QHBoxLayout()
         select_all = QPushButton("Select All")
-        select_all.clicked.connect(lambda: self.set_all_checks(Qt.Checked))
+        select_all.clicked.connect(lambda: self.set_all_checks(Qt.CheckState.Checked))
         unselect_all = QPushButton("Unselect All")
-        unselect_all.clicked.connect(lambda: self.set_all_checks(Qt.Unchecked))
+        unselect_all.clicked.connect(lambda: self.set_all_checks(Qt.CheckState.Unchecked))
         selection_buttons.addWidget(select_all)
         selection_buttons.addWidget(unselect_all)
         selection_buttons.addStretch(1)
@@ -564,7 +565,7 @@ class ConverterDialog(QDialog):
 
         logo_label = QLabel()
         logo_label.setFixedSize(132, 88)
-        logo_label.setAlignment(Qt.AlignCenter)
+        logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         original = QPixmap(os.path.join(os.path.dirname(__file__), "icon.png"))
         if not original.isNull():
             crop_x = int(original.width() * 0.47)
@@ -573,8 +574,8 @@ class ConverterDialog(QDialog):
             logo_label.setPixmap(
                 symbol.scaled(
                     logo_label.size(),
-                    Qt.KeepAspectRatio,
-                    Qt.SmoothTransformation,
+                    Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation,
                 )
             )
         else:
@@ -602,7 +603,7 @@ class ConverterDialog(QDialog):
         )
         description.setWordWrap(True)
         description.setMaximumWidth(390)
-        layout.addWidget(edition, 0, 1, Qt.AlignLeft)
+        layout.addWidget(edition, 0, 1, Qt.AlignmentFlag.AlignLeft)
         layout.addWidget(title, 1, 1)
         layout.addWidget(description, 2, 1)
         layout.setColumnStretch(1, 1)
@@ -613,14 +614,14 @@ class ConverterDialog(QDialog):
         status_layout.setContentsMargins(0, 0, 0, 0)
         status_layout.setSpacing(4)
         plugin_status = QLabel("Plugin: Ready  |  Service: Enabled")
-        plugin_status.setAlignment(Qt.AlignCenter)
+        plugin_status.setAlignment(Qt.AlignmentFlag.AlignCenter)
         plugin_status.setFixedHeight(25)
         plugin_status.setStyleSheet(
             "QLabel { color:#188038; background:#eaf9f3; border:1px solid #9ad8c2;"
             " border-radius:8px; padding:3px 7px; font-size:8pt; font-weight:700; }"
         )
         self.license_label = QLabel()
-        self.license_label.setAlignment(Qt.AlignCenter)
+        self.license_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.license_label.setFixedHeight(25)
         self.license_label.setWordWrap(False)
         self._refresh_license_label()
@@ -655,7 +656,7 @@ class ConverterDialog(QDialog):
 
     def open_activation(self):
         dialog = ActivationDialog(self)
-        dialog.exec_()
+        dialog.exec()
         self._refresh_license_label()
 
     def browse_input(self):
@@ -682,7 +683,7 @@ class ConverterDialog(QDialog):
         path = self.input_edit.text().strip()
         if not path:
             return
-        QApplication.setOverrideCursor(Qt.WaitCursor)
+        QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
         try:
             self.inspection = self.engine.inspect(path)
             self.format_edit.setText(self.inspection["format"])
@@ -692,8 +693,8 @@ class ConverterDialog(QDialog):
             self.attribute_list.clear()
             for value in self.inspection["attribute_choices"]:
                 item = QListWidgetItem(value)
-                item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
-                item.setCheckState(Qt.Checked)
+                item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+                item.setCheckState(Qt.CheckState.Checked)
                 self.attribute_list.addItem(item)
             self.attribute_list.blockSignals(False)
             source_crs = self.inspection.get("source_crs")
@@ -721,7 +722,7 @@ class ConverterDialog(QDialog):
         return [
             self.attribute_list.item(index).text()
             for index in range(self.attribute_list.count())
-            if self.attribute_list.item(index).checkState() == Qt.Checked
+            if self.attribute_list.item(index).checkState() == Qt.CheckState.Checked
         ]
 
     def set_all_checks(self, state):
@@ -739,13 +740,14 @@ class ConverterDialog(QDialog):
         self.log_edit.appendPlainText(str(message))
         QApplication.processEvents()
 
+    @single_run
     def run_conversion(self):
-        if self.inspection is None:
+        if self.inspection is None or os.path.abspath(self.input_edit.text().strip()) != self.engine.path:
             self.inspect_source()
         if self.inspection is None:
             return
         self.run_button.setEnabled(False)
-        QApplication.setOverrideCursor(Qt.WaitCursor)
+        QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
         try:
             access_mode, access_message = require_access()
             self._log("License: {}".format(access_message))

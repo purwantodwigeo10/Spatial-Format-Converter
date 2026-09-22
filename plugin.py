@@ -3,7 +3,10 @@
 
 from qgis.PyQt.QtCore import QCoreApplication, QUrl
 from qgis.PyQt.QtGui import QDesktopServices, QIcon
-from qgis.PyQt.QtWidgets import QAction
+try:
+    from qgis.PyQt.QtGui import QAction
+except ImportError:
+    from qgis.PyQt.QtWidgets import QAction
 
 from .dialogs import ActivationDialog, ConverterDialog
 from .license_manager import USER_GUIDE_URL

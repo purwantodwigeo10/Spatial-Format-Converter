@@ -10,8 +10,8 @@ about=Spatial Format Converter creates polygon SHP, KML, KMZ, or closed-boundary
 category=Vector
 icon=icon.png
 homepage=https://aktivasi.ruangspasial.my.id/help/spatial-format-converter-qgis
-tracker=https://github.com/purwantodwigeo10/spatial-format-converter-qgis/issues
-repository=https://github.com/purwantodwigeo10/spatial-format-converter-qgis
+tracker=https://github.com/purwantodwigeo10/Spatial-Format-Converter/issues
+repository=https://github.com/purwantodwigeo10/Spatial-Format-Converter
 license=GPL-3.0-or-later
 experimental=False
 deprecated=False
@@ -19,6 +19,15 @@ server=False
 hasProcessingProvider=False
 tags=converter,shapefile,kml,kmz,cad,dxf,polygon,crs,attributes
 changelog=26.1.0
+    Scope QGIS geometry enums through QgsWkbTypes.GeometryType for Qt6 scanner compatibility.
+    Use scoped Qt enums, exec(), Qt-compatible QAction imports and explicit Qt5/Qt6 field types.
+    Use bounded License Hub HTTPS requests, manual redirect policy, HTTP/network error checks and an already-finished reply guard.
+    Give explicit inactive/revoked/expired/pending states priority over conflicting success flags.
+    Do not assign the nearest outside text when a polygon contains no matching text.
+    Preserve multipart polygon geometry and check memory-provider insertion results.
+    Refresh source inspection when the input path changes.
+    Do not use CAD EntityHandle or RefName as fallback label text.
+    Protect existing SHP/KML/KMZ/DXF destinations.
     Improved polygon conversion reliability for SHP, KML, KMZ, and supported CAD sources.
     Refined CRS transformation, selected attribute transfer, and CAD layer mapping.
     Added sample data and clearer usage documentation.
