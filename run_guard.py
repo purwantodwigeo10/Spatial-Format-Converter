@@ -9,7 +9,9 @@ def single_run(function):
             return
         self._operation_running = True
         try:
-            return function(self, *args, **kwargs)
+            # Qt button signals may append a checked-state argument. The
+            # guarded dialog actions do not accept signal payloads.
+            return function(self)
         finally:
             self._operation_running = False
     return wrapped

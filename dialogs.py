@@ -24,6 +24,7 @@ from qgis.PyQt.QtWidgets import (
     QListWidget,
     QListWidgetItem,
     QMessageBox,
+    QProgressBar,
     QPushButton,
     QPlainTextEdit,
     QVBoxLayout,
@@ -32,6 +33,7 @@ from qgis.PyQt.QtWidgets import (
 from qgis.gui import QgsProjectionSelectionWidget
 
 from .converter import ConversionEngine, ConversionError
+from .qt_compat import run_dialog_or_loop
 from .license_manager import (
     LicenseError,
     USER_GUIDE_URL,
@@ -402,7 +404,7 @@ class ConverterDialog(QDialog):
     def __init__(self, iface):
         super().__init__(iface.mainWindow())
         self.iface = iface
-        self.engine = ConversionEngine(self._log)
+        self.engine = ConversionEngine(self._log, self._set_progress)
         self.inspection = None
         self.setWindowTitle("Spatial Format Converter — QGIS")
         self.setWindowIcon(_plugin_icon())
@@ -530,6 +532,18 @@ class ConverterDialog(QDialog):
         content.addLayout(right_column, 2)
         root.addLayout(content, 1)
 
+        progress_row = QHBoxLayout()
+        self.progress_label = QLabel("Ready")
+        self.progress_label.setMinimumWidth(190)
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setRange(0, 100)
+        self.progress_bar.setValue(0)
+        self.progress_bar.setFormat("%p%")
+        self.progress_bar.setTextVisible(True)
+        progress_row.addWidget(self.progress_label)
+        progress_row.addWidget(self.progress_bar, 1)
+        root.addLayout(progress_row)
+
         log_card, log_layout = self._card("Activity Log")
         self.log_edit = QPlainTextEdit()
         self.log_edit.setReadOnly(True)
@@ -656,7 +670,7 @@ class ConverterDialog(QDialog):
 
     def open_activation(self):
         dialog = ActivationDialog(self)
-        dialog.exec()
+        run_dialog_or_loop(dialog)
         self._refresh_license_label()
 
     def browse_input(self):
@@ -683,6 +697,7 @@ class ConverterDialog(QDialog):
         path = self.input_edit.text().strip()
         if not path:
             return
+        self._set_progress(3, "Inspecting source dataset...")
         QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
         try:
             self.inspection = self.engine.inspect(path)
@@ -712,8 +727,10 @@ class ConverterDialog(QDialog):
                     len(self.inspection["attribute_choices"]),
                 )
             )
+            self._set_progress(10, "Source inspection completed.")
         except Exception as error:
             self.inspection = None
+            self._set_progress(0, "Source inspection failed.")
             QMessageBox.critical(self, "Source inspection failed", str(error))
         finally:
             QApplication.restoreOverrideCursor()
@@ -740,15 +757,25 @@ class ConverterDialog(QDialog):
         self.log_edit.appendPlainText(str(message))
         QApplication.processEvents()
 
+    def _set_progress(self, value, message=None):
+        value = max(0, min(100, int(value)))
+        self.progress_bar.setValue(value)
+        if message is not None:
+            self.progress_label.setText(str(message))
+        QApplication.processEvents()
+
     @single_run
     def run_conversion(self):
+        self._set_progress(0, "Validating conversion inputs...")
         if self.inspection is None or os.path.abspath(self.input_edit.text().strip()) != self.engine.path:
             self.inspect_source()
         if self.inspection is None:
+            self._set_progress(0, "Source inspection is required.")
             return
         self.run_button.setEnabled(False)
         QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
         try:
+            self._set_progress(15, "Checking license access...")
             access_mode, access_message = require_access()
             self._log("License: {}".format(access_message))
             target_crs = self.target_crs.crs() if self.transform_check.isChecked() else None
@@ -763,17 +790,21 @@ class ConverterDialog(QDialog):
                 target_crs=target_crs,
                 add_to_project=self.add_project.isChecked(),
             )
+            self._set_progress(97, "Recording successful conversion...")
             record_success(access_mode)
             self._refresh_license_label()
+            self._set_progress(100, "Conversion completed.")
             QMessageBox.information(
                 self,
                 "Conversion completed",
                 "Output created successfully:\n{}".format(output_path),
             )
         except (ConversionError, LicenseError) as error:
+            self._set_progress(self.progress_bar.value(), "Conversion failed.")
             self._log("ERROR: {}".format(error))
             QMessageBox.critical(self, "Spatial Format Converter", str(error))
         except Exception as error:
+            self._set_progress(self.progress_bar.value(), "Conversion failed.")
             self._log("UNEXPECTED ERROR: {}".format(error))
             QMessageBox.critical(
                 self,

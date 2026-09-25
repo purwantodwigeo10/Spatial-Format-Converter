@@ -2,6 +2,7 @@
 """Bounded HTTPS License Hub requests using QGIS proxy/TLS settings."""
 import json
 from urllib.parse import urlencode, urlparse
+from .qt_compat import run_dialog_or_loop
 try:
     from qgis.PyQt.QtCore import QByteArray, QEventLoop, QTimer, QUrl
     from qgis.PyQt.QtNetwork import QNetworkReply, QNetworkRequest
@@ -44,7 +45,8 @@ def request_json(method, url, payload=None, timeout=10, user_agent="QGISPlugin")
     if method == "GET":
         reply = manager.get(request)
     else:
-        request.setHeader(QNetworkRequest.KnownHeaders.ContentTypeHeader, "application/json")
+        request.setRawHeader(
+            QByteArray(b"Content-Type"), QByteArray(b"application/json"))
         reply = manager.post(request, QByteArray(json.dumps(payload or {}).encode("utf-8")))
     loop = QEventLoop()
     timer = QTimer()
@@ -69,7 +71,7 @@ def request_json(method, url, payload=None, timeout=10, user_agent="QGISPlugin")
     timer.timeout.connect(loop.quit)
     timer.start(max(1, int(float(timeout) * 1000)))
     if not reply.isFinished():
-        loop.exec()
+        run_dialog_or_loop(loop)
     timer.stop()
     try:
         if too_large[0]:

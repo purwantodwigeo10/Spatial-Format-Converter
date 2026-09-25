@@ -4,9 +4,9 @@ qgisMinimumVersion=3.22
 qgisMaximumVersion=3.99
 description=Convert polygon data among SHP, KML, KMZ, and supported CAD sources with CRS and attribute controls.
 version=26.1.0
-author=Dwi Purwanto
+author=Dwi Purwanto (Ruang Spasial)
 email=ruangspasial@gmail.com
-about=Spatial Format Converter creates polygon SHP, KML, KMZ, or closed-boundary DXF output. It supports CRS transformation, selected attribute transfer, CAD layer mapping, and optional CAD text-to-polygon attributes. Available CAD readers depend on the GDAL drivers supplied by the user's QGIS installation; DWG output is not provided. License activation uses the Ruang Spasial License Hub over HTTPS. No GIS dataset is transmitted to the service.
+about=Spatial Format Converter creates polygon SHP, KML, KMZ, or closed-boundary DXF output. It supports CRS transformation, selected attribute transfer, CAD layer mapping, and optional CAD text-to-polygon attributes. Available CAD readers depend on the GDAL drivers supplied by the user's QGIS installation; DWG output is not provided.
 category=Vector
 icon=icon.png
 homepage=https://aktivasi.ruangspasial.my.id/help/spatial-format-converter-qgis
@@ -19,15 +19,11 @@ server=False
 hasProcessingProvider=False
 tags=converter,shapefile,kml,kmz,cad,dxf,polygon,crs,attributes
 changelog=26.1.0
-    Scope QGIS geometry enums through QgsWkbTypes.GeometryType for Qt6 scanner compatibility.
-    Use scoped Qt enums, exec(), Qt-compatible QAction imports and explicit Qt5/Qt6 field types.
-    Use bounded License Hub HTTPS requests, manual redirect policy, HTTP/network error checks and an already-finished reply guard.
-    Give explicit inactive/revoked/expired/pending states priority over conflicting success flags.
-    Do not assign the nearest outside text when a polygon contains no matching text.
-    Preserve multipart polygon geometry and check memory-provider insertion results.
-    Refresh source inspection when the input path changes.
-    Do not use CAD EntityHandle or RefName as fallback label text.
-    Protect existing SHP/KML/KMZ/DXF destinations.
-    Improved polygon conversion reliability for SHP, KML, KMZ, and supported CAD sources.
-    Refined CRS transformation, selected attribute transfer, and CAD layer mapping.
-    Added sample data and clearer usage documentation.
+    Convert polygon datasets among Shapefile, KML, KMZ, and supported CAD sources.
+    Transform output coordinates to a selected CRS.
+    Transfer selected source attributes to converted outputs.
+    Map CAD layers and optionally associate contained CAD text with polygons.
+    Preserve multipart polygon geometry and validate created outputs.
+    Protect existing destinations from accidental replacement.
+    Display live conversion progress from 0 to 100 percent.
+    Include synthetic sample data and usage documentation.

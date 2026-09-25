@@ -109,8 +109,9 @@ def safe_cad_layer(value, fallback="SFC_POLYGON"):
 
 
 class ConversionEngine:
-    def __init__(self, log=None):
+    def __init__(self, log=None, progress=None):
         self.log = log or (lambda _message: None)
+        self.progress = progress or (lambda _value, _message=None: None)
         self.path = ""
         self.source_format = ""
         self.parts = []
@@ -120,6 +121,9 @@ class ConversionEngine:
 
     def _message(self, text):
         self.log(str(text))
+
+    def _progress(self, value, message=None):
+        self.progress(int(value), message)
 
     def inspect(self, path):
         if not path or not os.path.isfile(path):
@@ -391,7 +395,8 @@ class ConversionEngine:
             )
         text_records = self._text_records(selected_values) if is_cad else {}
         output_features = []
-        for geometry, source_feature in polygons:
+        total_polygons = max(1, len(polygons))
+        for polygon_number, (geometry, source_feature) in enumerate(polygons, 1):
             source_geometry = QgsGeometry(geometry)
             attributes = []
             for source_name, _output_name in field_map:
@@ -421,6 +426,10 @@ class ConversionEngine:
             feature.setGeometry(output_geometry)
             feature.setAttributes(attributes)
             output_features.append(feature)
+            self._progress(
+                35 + int(35 * polygon_number / float(total_polygons)),
+                "Building polygon features...",
+            )
         added, _ = provider.addFeatures(output_features)
         if not added or output.featureCount() != len(output_features):
             raise ConversionError("Some polygon features could not be added to the output.")
@@ -508,7 +517,8 @@ class ConversionEngine:
         label_count = 0
         polygon_count = 0
         cad_layers = set()
-        for source in polygon_layer.getFeatures():
+        total_features = max(1, int(polygon_layer.featureCount()))
+        for feature_number, source in enumerate(polygon_layer.getFeatures(), 1):
             source_geometry = source.geometry()
             boundary = self._polygon_boundary(source_geometry)
             if boundary.isNull() or boundary.isEmpty():
@@ -580,6 +590,11 @@ class ConversionEngine:
                 text_feature = None
                 label_count += 1
 
+            self._progress(
+                72 + int(20 * feature_number / float(total_features)),
+                "Writing DXF entities...",
+            )
+
         dataset.FlushCache()
         dataset = None
         if boundary_count < 1:
@@ -606,6 +621,7 @@ class ConversionEngine:
         target_crs=None,
         add_to_project=True,
     ):
+        self._progress(20, "Preparing conversion...")
         if not self.parts:
             raise ConversionError(
                 "Inspect the source before running conversion.")
@@ -620,6 +636,7 @@ class ConversionEngine:
         if extension is None:
             raise ConversionError("Unsupported output format: %s" % output_format)
         ensure_new_output(os.path.join(output_folder, output_name + extension))
+        self._progress(32, "Building polygon output...")
         polygon_layer = self.build_polygon_layer(
             main_choice,
             selected_values,
@@ -629,12 +646,15 @@ class ConversionEngine:
         )
 
         if output_format == "SHP":
+            self._progress(72, "Writing Shapefile output...")
             output_path = os.path.join(output_folder, output_name + ".shp")
             self._write_layer(polygon_layer, output_path, "ESRI Shapefile")
         elif output_format == "KML":
+            self._progress(72, "Writing KML output...")
             output_path = os.path.join(output_folder, output_name + ".kml")
             self._write_layer(polygon_layer, output_path, "KML")
         elif output_format == "KMZ":
+            self._progress(72, "Writing KMZ output...")
             output_path = os.path.join(output_folder, output_name + ".kmz")
             with tempfile.TemporaryDirectory(prefix="sfc_kmz_") as folder:
                 kml_path = os.path.join(folder, "doc.kml")
@@ -642,12 +662,14 @@ class ConversionEngine:
                 with zipfile.ZipFile(output_path, "w", zipfile.ZIP_DEFLATED) as archive:
                     archive.write(kml_path, "doc.kml")
         elif output_format == "DXF":
+            self._progress(72, "Writing DXF output...")
             output_path = os.path.join(output_folder, output_name + ".dxf")
             self._write_dxf(polygon_layer, output_path, main_choice)
         else:
             raise ConversionError(
                 "Unsupported output format: {}".format(output_format))
 
+        self._progress(94, "Validating created output...")
         if not os.path.isfile(output_path):
             raise ConversionError("The output file was not created.")
         if add_to_project and output_format in ("SHP", "KML"):
@@ -655,4 +677,5 @@ class ConversionEngine:
             if layer.isValid():
                 QgsProject.instance().addMapLayer(layer)
         self._message("Output created: {}".format(output_path))
+        self._progress(96, "Output created successfully.")
         return output_path

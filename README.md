@@ -50,10 +50,5 @@ is stored in the current user's application-data directory.
 - Source: <https://github.com/purwantodwigeo10/Spatial-Format-Converter>
 - Issues: <https://github.com/purwantodwigeo10/Spatial-Format-Converter/issues>
 
-Copyright (C) 2026 Dwi Purwanto / Ruang Spasial. Licensed under
+Copyright (C) 2026 Dwi Purwanto (Ruang Spasial). Licensed under
 GPL-3.0-or-later; see `LICENSE`.
-
-
-## Current revision
-
-See [REVISION_NOTES.md](REVISION_NOTES.md) for behavior changes and validation limits. Existing output filenames are refused; choose a new name for each run.
